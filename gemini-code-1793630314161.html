@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexLink - Red & Black Commerce Engine</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            900: '#7f1d1d',
+                            950: '#450a0a'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        poppins: ['Poppins', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes popIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #7f1d1d;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-black text-gray-100 font-sans h-full antialiased selection:bg-red-600 selection:text-white">
+    <div id="app" class="min-h-full flex flex-col">
+
+        <!-- HALAMAN LOGIN & DAFTAR -->
+        <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-black via-zinc-950 to-red-950 overflow-y-auto">
+            <div id="auth-card" class="max-w-2xl w-full bg-zinc-900/95 border border-red-900/40 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden my-auto transition-all duration-300">
+                <div class="absolute -top-24 -left-24 w-48 h-48 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-red-600/10 border border-red-600/30 text-red-500 mb-3">
+                        <i class="fa-solid fa-fire text-2xl"></i>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Nex<span class="text-red-600">Link</span> Store</h1>
+                    <p class="text-gray-400 text-xs sm:text-sm mt-1" id="auth-subtitle">Silakan masuk atau buat akun terlebih dahulu</p>
+                </div>
+
+                <!-- LOADING OVERLAY SAAT LOGIN INSTAN (OAUTH) -->
+                <div id="oauth-loading" class="hidden text-center py-8 space-y-4">
+                    <div class="inline-block w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white">Menghubungkan Akun...</h4>
+                        <p class="text-xs text-zinc-400 mt-1" id="oauth-loading-text">Menghubungkan ke server Google/GitHub...</p>
+                    </div>
+                </div>
+
+                <!-- FORM LOGIN -->
+                <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4 max-w-md mx-auto">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Email Terdaftar</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+                            <input type="email" id="login-email" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-11 pr-4 text-gray-100 text-sm focus:outline-none focus:border-red-600" placeholder="nama@gmail.com">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Password</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
+                            <input type="password" id="login-password" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 pl-11 pr-4 text-gray-100 text-sm focus:outline-none focus:border-red-600" placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div id="login-error" class="text-red-500 text-xs hidden bg-red-950/40 p-2.5 rounded-lg border border-red-900/50">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> <span id="login-error-text">Akun belum terdaftar. Silakan daftar terlebih dahulu!</span>
+                    </div>
+
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-red-600/30 transition-all text-sm">
+                        Masuk ke Dashboard
+                    </button>
+
+                    <div class="text-center pt-2">
+                        <p class="text-xs text-gray-400">Belum punya akun? <button type="button" onclick="toggleAuthMode('register')" class="text-red-500 font-semibold hover:underline">Daftar Sekarang</button></p>
+                    </div>
+                </form>
+
+                <!-- FORM REGISTRASI: DIBAGI MENJADI 2 BAGIAN -->
+                <div id="register-form" class="hidden space-y-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+                        
+                        <!-- BAGIAN 1: DAFTAR / LOGIN INSTAN -->
+                        <div class="bg-zinc-950/80 border border-zinc-800 p-4 rounded-2xl flex flex-col justify-between space-y-3">
+                            <div>
+                                <h4 class="text-xs font-bold text-red-500 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-bolt"></i> 1. Masuk / Daftar Instan
+                                </h4>
+                                <p class="text-[11px] text-zinc-400">Pencet akun Anda untuk terhubung otomatis:</p>
+                            </div>
+
+                            <div class="space-y-2.5 my-auto">
+                                <button type="button" onclick="socialRegister('Google / Gmail')" class="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all hover:border-red-600">
+                                    <i class="fa-brands fa-google text-red-500 text-sm"></i> Connect dengan Google
+                                </button>
+                                <button type="button" onclick="socialRegister('GitHub')" class="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all hover:border-red-600">
+                                    <i class="fa-brands fa-github text-white text-sm"></i> Connect dengan GitHub
+                                </button>
+                            </div>
+
+                            <p class="text-[10px] text-zinc-500 text-center">Otomatis sync & login ke dashboard.</p>
+                        </div>
+
+                        <!-- BAGIAN 2: DAFTAR MANUAL -->
+                        <form onsubmit="handleRegister(event)" class="bg-zinc-950/80 border border-zinc-800 p-4 rounded-2xl space-y-3">
+                            <h4 class="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-user-pen"></i> 2. Form Manual
+                            </h4>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold uppercase text-gray-400 mb-1">Nama Lengkap</label>
+                                <input type="text" id="reg-name" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-1.5 px-3 text-xs text-gray-100 focus:outline-none focus:border-red-600" placeholder="Nama Anda">
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold uppercase text-gray-400 mb-1">Email</label>
+                                <input type="email" id="reg-email" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-1.5 px-3 text-xs text-gray-100 focus:outline-none focus:border-red-600" placeholder="nama@gmail.com">
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold uppercase text-gray-400 mb-1">Password</label>
+                                <input type="password" id="reg-password" required class="w-full bg-zinc-900 border border-zinc-800 rounded-lg py-1.5 px-3 text-xs text-gray-100 focus:outline-none focus:border-red-600" placeholder="••••••••">
+                            </div>
+
+                            <button type="submit" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-3 rounded-lg text-xs transition-all shadow-md shadow-red-600/30">
+                                Buat Akun Manual
+                            </button>
+                        </form>
+
+                    </div>
+
+                    <div class="text-center pt-1">
+                        <p class="text-xs text-gray-400">Sudah punya akun? <button type="button" onclick="toggleAuthMode('login')" class="text-red-500 font-semibold hover:underline">Masuk Ke Akun</button></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <div id="dashboard-app" class="hidden flex-1 flex flex-col bg-black text-gray-100">
+            
+            <!-- HEADER NAVBAR -->
+            <header class="sticky top-0 z-40 bg-zinc-950/90 backdrop-blur-md border-b border-red-950 px-3 sm:px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-red-600/20 border border-red-600/40 flex items-center justify-center text-red-500">
+                        <i class="fa-solid fa-fire text-base"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-base leading-tight tracking-tight text-white">Nex<span class="text-red-600">Link</span></h2>
+                        <span class="text-[9px] uppercase font-bold tracking-widest text-red-400 bg-red-950/60 border border-red-900/50 px-1.5 py-0.5 rounded">Store Dashboard</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <button onclick="switchTab('profile')" class="flex items-center bg-zinc-900 hover:bg-zinc-800 border border-red-600/40 rounded-full px-3 py-1.5 space-x-1.5 text-xs transition-all">
+                        <i class="fa-solid fa-user text-red-500 text-xs"></i>
+                        <span class="font-medium text-gray-200">Profil Saya</span>
+                    </button>
+
+                    <button onclick="openLivePreviewModal()" class="bg-zinc-900 hover:bg-zinc-800 text-gray-200 border border-zinc-800 text-xs px-3 py-2 rounded-xl flex items-center space-x-1.5 transition-all">
+                        <i class="fa-solid fa-eye text-red-500 text-xs"></i>
+                        <span class="hidden sm:inline font-medium">Lihat Toko</span>
+                    </button>
+
+                    <button onclick="handleLogout()" title="Keluar" class="bg-red-600/10 hover:bg-red-600/20 text-red-500 border border-red-600/20 text-xs p-2 rounded-xl transition-all">
+                        <i class="fa-solid fa-power-off text-xs"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- MAIN CONTAINER -->
+            <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 space-y-5">
+
+                <!-- STATS & KALKULATOR PENJUALAN & VIEW COUNTER -->
+                <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-xl bg-red-600/10 border border-red-600/30 flex items-center justify-center text-red-500 text-xl">
+                            <i class="fa-solid fa-eye"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-400 block">Total Toko View</span>
+                            <h3 id="stat-views" class="text-2xl font-black text-white">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-600/10 border border-emerald-600/30 flex items-center justify-center text-emerald-500 text-xl">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-400 block">Pendapatan Bersih</span>
+                            <h3 id="stat-revenue" class="text-2xl font-black text-emerald-400">Rp 0</h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-xl bg-blue-600/10 border border-blue-600/30 flex items-center justify-center text-blue-500 text-xl">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs text-zinc-400 block">Item Terjual Aktif</span>
+                            <h3 id="stat-sold-count" class="text-2xl font-black text-white">0</h3>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- NAVIGATION TABS -->
+                <section class="grid grid-cols-3 gap-2 sm:gap-4">
+                    <button onclick="switchTab('store')" id="nav-btn-store" class="nav-tab-btn active bg-zinc-900 border border-red-600 p-3.5 rounded-xl text-left transition-all flex flex-col justify-between h-20">
+                        <i class="fa-solid fa-store text-red-500 text-base"></i>
+                        <div>
+                            <span class="block text-xs sm:text-sm font-bold text-white">Kelola Produk</span>
+                        </div>
+                    </button>
+
+                    <button onclick="switchTab('links')" id="nav-btn-links" class="nav-tab-btn bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-left transition-all flex flex-col justify-between h-20">
+                        <i class="fa-solid fa-link text-red-500 text-base"></i>
+                        <div>
+                            <span class="block text-xs sm:text-sm font-bold text-white">Tautan Langsung</span>
+                        </div>
+                    </button>
+
+                    <button onclick="switchTab('profile')" id="nav-btn-profile" class="nav-tab-btn bg-zinc-900 border border-zinc-800 p-3.5 rounded-xl text-left transition-all flex flex-col justify-between h-20">
+                        <i class="fa-solid fa-user-gear text-red-500 text-base"></i>
+                        <div>
+                            <span class="block text-xs sm:text-sm font-bold text-white">Profil & Info</span>
+                        </div>
+                    </button>
+                </section>
+
+                <!-- WORKSPACE TABS & DUAL LIVE PREVIEW (MOBILE & PC) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    
+                    <!-- KIRI: EDITING FORM (7 KOLOM) -->
+                    <div class="lg:col-span-7 space-y-6">
+
+                        <!-- TAB 1: KELOLA PRODUK / ITEM & KALKULATOR PENJUALAN -->
+                        <div id="tab-store" class="tab-content bg-zinc-900/90 border border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-lg space-y-5">
+                            <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+                                <div>
+                                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                        <i class="fa-solid fa-box-archive text-red-500"></i> Katalog Barang Jualan & Kalkulator
+                                    </h3>
+                                    <p class="text-xs text-zinc-400">Tambahkan produk. Pembeli yang mengklik akan diarahkan langsung ke WhatsApp Anda.</p>
+                                </div>
+                                <button onclick="openAddItemModal()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all shadow flex items-center gap-1.5">
+                                    <i class="fa-solid fa-plus"></i> Tambah Item
+                                </button>
+                            </div>
+
+                            <!-- LIST ITEM JUALAN -->
+                            <div id="store-items-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Dynamic Store Items -->
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: KELOLA TAUTAN LANGSUNG -->
+                        <div id="tab-links" class="tab-content hidden bg-zinc-900/90 border border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-lg space-y-5">
+                            <div class="flex items-center justify-between border-b border-zinc-800 pb-4">
+                                <div>
+                                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                        <i class="fa-solid fa-link text-red-500"></i> Kelola Tautan Eksternal
+                                    </h3>
+                                    <p class="text-xs text-zinc-400">URL diarahkan langsung ke domain asli.</p>
+                                </div>
+                                <button onclick="addNewLink()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all shadow flex items-center gap-1.5">
+                                    <i class="fa-solid fa-plus"></i> Tambah Tautan
+                                </button>
+                            </div>
+
+                            <div id="links-container" class="space-y-3">
+                                <!-- Dynamic Links -->
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: PROFIL & UBAH FOTO PROFIL / COVER PEMANDANGAN -->
+                        <div id="tab-profile" class="tab-content hidden bg-zinc-900/90 border border-zinc-800 rounded-3xl p-5 sm:p-6 shadow-lg space-y-6">
+                            <div class="border-b border-zinc-800 pb-4 flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                        <i class="fa-solid fa-id-card text-red-500"></i> Informasi Diri & Galeri Tampilan
+                                    </h3>
+                                    <p class="text-xs text-zinc-400">Atur profil, avatar, dan foto sampul pemandangan dari galeri.</p>
+                                </div>
+                                <button onclick="showUserInfoModal()" class="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs text-red-400 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                                    <i class="fa-solid fa-eye"></i> Info User
+                                </button>
+                            </div>
+
+                            <!-- UPLOAD COVER PEMANDANGAN & FOTO AVATAR -->
+                            <div class="space-y-4 bg-zinc-950 p-4 rounded-2xl border border-zinc-800">
+                                <div>
+                                    <h4 class="text-xs font-bold text-white uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-image-landscape text-red-500"></i> Foto Sampul Pemandangan (Header Cover)
+                                    </h4>
+                                    <p class="text-[11px] text-zinc-400 mb-2">Mengisi ruang kosong di bagian atas profil toko Anda:</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        <label class="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow">
+                                            <i class="fa-solid fa-upload"></i> Upload Cover dari Galeri
+                                            <input type="file" id="cover-file-input" accept="image/*" onchange="uploadCoverFromGallery(event)" class="hidden">
+                                        </label>
+                                        <button type="button" onclick="randomizeCover()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3 py-2 rounded-xl border border-zinc-700">Cover Pemandangan Acak</button>
+                                    </div>
+                                </div>
+
+                                <hr class="border-zinc-800">
+
+                                <div class="flex flex-col sm:flex-row items-center gap-4">
+                                    <div class="w-16 h-16 rounded-full overflow-hidden ring-2 ring-red-600 shrink-0 bg-zinc-900">
+                                        <img id="profile-avatar-preview" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="space-y-1.5 text-center sm:text-left flex-1">
+                                        <h4 class="text-xs font-bold text-white uppercase tracking-wider">Foto Profil (Avatar)</h4>
+                                        <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
+                                            <label class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold px-3 py-1.5 rounded-xl cursor-pointer border border-zinc-700">
+                                                Ganti Avatar dari Galeri
+                                                <input type="file" id="gallery-file-input" accept="image/*" onchange="uploadPhotoFromGallery(event)" class="hidden">
+                                            </label>
+                                            <button type="button" onclick="randomizeAvatar()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs px-3 py-1.5 rounded-xl border border-zinc-700">Avatar Acak</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-zinc-400 mb-1">Nama Lengkap Toko</label>
+                                    <input type="text" id="input-display-name" oninput="updateProfileData()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-red-600">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-zinc-400 mb-1">Nomor WhatsApp (Format: 628xxx)</label>
+                                    <input type="text" id="input-whatsapp" oninput="updateProfileData()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-xs text-zinc-100 focus:outline-none focus:border-red-600" placeholder="628123456789">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-xs font-semibold text-zinc-400 mb-1">Deskripsi Bio Profil</label>
+                                    <textarea id="input-bio" rows="2" oninput="updateProfileData()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-100 focus:outline-none focus:border-red-600"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- KANAN: DUAL LIVE PREVIEW (MOBILE HP & DESKTOP PC) (5 KOLOM) -->
+                    <div class="lg:col-span-5 sticky top-20 space-y-3">
+                        <div class="bg-zinc-900 border border-zinc-800 p-1.5 rounded-2xl flex items-center justify-between shadow-lg">
+                            <span class="text-xs font-semibold text-zinc-300 px-3 flex items-center gap-1.5">
+                                <i class="fa-solid fa-sliders text-red-500"></i> Live Preview:
+                            </span>
+                            <div class="flex items-center space-x-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+                                <button id="btn-prev-hp" onclick="switchPreviewMode('hp')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-red-600 text-white shadow">
+                                    <i class="fa-solid fa-mobile-screen mr-1"></i> HP
+                                </button>
+                                <button id="btn-prev-pc" onclick="switchPreviewMode('pc')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-zinc-400 hover:text-white">
+                                    <i class="fa-solid fa-desktop mr-1"></i> PC
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- MOCKUP MOBILE (HP) ALA LINKTR.EE -> nexlink.me -->
+                        <div id="container-preview-hp" class="w-full bg-zinc-900 border-4 border-zinc-800 rounded-[35px] p-3 shadow-2xl relative overflow-hidden transition-all">
+                            <div class="w-24 h-3.5 bg-zinc-800 rounded-full mx-auto mb-3"></div>
+                            
+                            <div class="bg-zinc-950 border border-zinc-800 rounded-[25px] overflow-hidden min-h-[480px] flex flex-col justify-between">
+                                <!-- HEADER COVER PEMANDANGAN DI PREVIEW -->
+                                <div class="relative">
+                                    <div class="w-full h-28 bg-zinc-900 overflow-hidden">
+                                        <img id="preview-cover-hp" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop&q=80" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full overflow-hidden ring-4 ring-zinc-950 shadow-md bg-zinc-900">
+                                        <img id="preview-avatar-hp" src="" class="w-full h-full object-cover">
+                                    </div>
+                                </div>
+
+                                <div class="p-4 pt-10 text-center space-y-3 flex-1 flex flex-col justify-between">
+                                    <div class="space-y-1">
+                                        <h4 id="preview-name-hp" class="font-bold text-sm text-white">Store Name</h4>
+                                        <p id="preview-bio-hp" class="text-[11px] text-zinc-400 line-clamp-2 px-1">Bio description...</p>
+                                    </div>
+
+                                    <!-- KONTEN LINK ALA LINKTR.EE -->
+                                    <div id="preview-links-hp" class="space-y-2 my-auto w-full">
+                                        <!-- Dynamic Links / Items -->
+                                    </div>
+
+                                    <div class="pt-2 border-t border-zinc-900">
+                                        <span class="text-[9px] font-mono text-zinc-500 flex items-center justify-center gap-1">
+                                            <i class="fa-solid fa-link text-red-500"></i> nexlink.me/<span id="preview-slug-hp">store</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MOCKUP DESKTOP (PC) -->
+                        <div id="container-preview-pc" class="hidden w-full bg-zinc-900 border-2 border-zinc-800 rounded-2xl p-3 shadow-2xl space-y-2 transition-all">
+                            <div class="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 flex items-center space-x-2">
+                                <div class="flex space-x-1.5">
+                                    <div class="w-2.5 h-2.5 bg-red-500/80 rounded-full"></div>
+                                    <div class="w-2.5 h-2.5 bg-amber-500/80 rounded-full"></div>
+                                    <div class="w-2.5 h-2.5 bg-green-500/80 rounded-full"></div>
+                                </div>
+                                <div class="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-0.5 text-[10px] text-zinc-400 font-mono flex items-center justify-between">
+                                    <span>nexlink.me/<span id="preview-slug-pc">store</span></span>
+                                    <i class="fa-solid fa-lock text-[8px] text-emerald-500"></i>
+                                </div>
+                            </div>
+
+                            <div class="bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden min-h-[420px] flex flex-col justify-between">
+                                <div class="relative">
+                                    <div class="w-full h-28 bg-zinc-900 overflow-hidden">
+                                        <img id="preview-cover-pc" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop&q=80" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full overflow-hidden ring-4 ring-zinc-950 shadow-md bg-zinc-900">
+                                        <img id="preview-avatar-pc" src="" class="w-full h-full object-cover">
+                                    </div>
+                                </div>
+
+                                <div class="p-5 pt-10 text-center space-y-3 flex-1 flex flex-col justify-between">
+                                    <div class="space-y-1">
+                                        <h4 id="preview-name-pc" class="font-bold text-sm text-white">Store Name</h4>
+                                        <p id="preview-bio-pc" class="text-[11px] text-zinc-400 line-clamp-2 max-w-xs mx-auto">Bio description...</p>
+                                    </div>
+
+                                    <div id="preview-links-pc" class="space-y-2 max-w-xs mx-auto w-full my-auto">
+                                        <!-- Dynamic Links / Items -->
+                                    </div>
+
+                                    <div class="pt-2 border-t border-zinc-900">
+                                        <span class="text-[9px] font-mono text-zinc-500 flex items-center justify-center gap-1">
+                                            <i class="fa-solid fa-desktop text-red-500"></i> DESKTOP LINKTREE VIEW
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </main>
+        </div>
+
+    </div>
+
+    <!-- MODAL INFORMASI PRIBADI USER -->
+    <div id="modal-user-info" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-pop relative">
+            <button onclick="closeModal('modal-user-info')" class="absolute top-4 right-4 text-zinc-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center space-x-3 border-b border-zinc-800 pb-3">
+                <div class="w-10 h-10 rounded-xl bg-red-600/20 border border-red-600/40 text-red-500 flex items-center justify-center text-base">
+                    <i class="fa-solid fa-address-card"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white">Informasi Pribadi User</h3>
+                    <p class="text-[11px] text-zinc-400">Data terdaftar di sistem</p>
+                </div>
+            </div>
+
+            <div class="space-y-2.5 text-xs font-sans">
+                <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 flex justify-between">
+                    <span class="text-zinc-400">Nama User:</span>
+                    <span id="info-name" class="font-bold text-white">Rian User</span>
+                </div>
+                <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 flex justify-between">
+                    <span class="text-zinc-400">Email:</span>
+                    <span id="info-email" class="font-mono text-red-400">user@gmail.com</span>
+                </div>
+                <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 flex justify-between">
+                    <span class="text-zinc-400">WhatsApp:</span>
+                    <span id="info-wa" class="font-mono text-emerald-400">+628123456789</span>
+                </div>
+            </div>
+
+            <button onclick="closeModal('modal-user-info')" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2.5 rounded-xl text-xs">
+                Tutup Informasi
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH ITEM JUALAN -->
+    <div id="modal-add-item" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-pop relative">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-cart-plus text-red-500"></i> Tambah Item Jualan Baru
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-zinc-400 mb-1">Nama Barang / Item</label>
+                    <input type="text" id="new-item-name" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-zinc-100 focus:outline-none focus:border-red-600" placeholder="Contoh: Akun Premium / Jasa Design">
+                </div>
+                <div>
+                    <label class="block text-zinc-400 mb-1">Harga (Rupiah)</label>
+                    <input type="number" id="new-item-price" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-zinc-100 focus:outline-none focus:border-red-600" placeholder="50000">
+                </div>
+                <div>
+                    <label class="block text-zinc-400 mb-1">URL Gambar Produk</label>
+                    <input type="url" id="new-item-image" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-zinc-100 focus:outline-none focus:border-red-600" placeholder="https://images.unsplash.com/...">
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeModal('modal-add-item')" class="flex-1 bg-zinc-800 hover:bg-zinc-700 py-2.5 rounded-xl text-xs font-semibold">Batal</button>
+                <button onclick="saveNewItem()" class="flex-1 bg-red-600 hover:bg-red-500 py-2.5 rounded-xl text-xs font-semibold text-white">Simpan Item</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LIVE PREVIEW TOKO PUBLIK -->
+    <div id="modal-public-preview" class="fixed inset-0 z-50 hidden flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-lg">
+        <div class="relative w-full max-w-md h-[90vh] bg-zinc-950 border border-red-900/50 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+            <div class="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+                <span class="text-xs font-bold text-gray-300 flex items-center gap-2">
+                    <i class="fa-solid fa-globe text-red-500"></i> Tampilan Publik nexlink.me
+                </span>
+                <button onclick="closeModal('modal-public-preview')" class="text-zinc-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div id="public-view-body" class="flex-1 overflow-y-auto p-5 space-y-5">
+                <!-- Render Public Store -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGIKA APLIKASI -->
+    <script>
+        const state = {
+            currentUser: {
+                name: 'Rian Store',
+                email: 'rian@gmail.com',
+                whatsapp: '628123456789',
+                bio: 'Official Digital Store & Services. Fast Response & Trusted!',
+                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+                cover: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop&q=80',
+                slug: 'rianstore'
+            },
+            registeredAccounts: [],
+            stats: {
+                views: 0,
+                revenue: 0
+            },
+            items: [
+                { id: '1', name: 'Netflix 1 Bulan Private', price: 35000, image: 'https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=300&auto=format&fit=crop&q=80', status: 'available' },
+                { id: '2', name: 'Spotify Premium Individual', price: 20000, image: 'https://images.unsplash.com/photo-1614680376593-902f749f7ffc?w=300&auto=format&fit=crop&q=80', status: 'available' }
+            ],
+            links: [
+                { id: '1', title: 'Chat WhatsApp Admin', url: 'https://whatsapp.com', icon: 'fa-whatsapp' },
+                { id: '2', title: 'Kunjungi Instagram Store', url: 'https://instagram.com', icon: 'fa-instagram' }
+            ]
+        };
+
+        window.onload = function() {
+            state.stats.views += 1;
+            updateStatsUI();
+        };
+
+        function toggleAuthMode(mode) {
+            const loginForm = document.getElementById('login-form');
+            const regForm = document.getElementById('register-form');
+            const subtitle = document.getElementById('auth-subtitle');
+
+            if (mode === 'register') {
+                loginForm.classList.add('hidden');
+                regForm.classList.remove('hidden');
+                subtitle.innerText = 'Daftar akun baru untuk mulai berjualan';
+            } else {
+                regForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+                subtitle.innerText = 'Silakan masuk dengan akun terdaftar Anda';
+            }
+        }
+
+        function socialRegister(providerName) {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('oauth-loading').classList.remove('hidden');
+            document.getElementById('oauth-loading-text').innerText = `Menghubungkan ke server ${providerName}...`;
+
+            setTimeout(() => {
+                const autoEmail = `user.${Date.now().toString().slice(-4)}@${providerName.includes('Google') ? 'gmail.com' : 'github.com'}`;
+                const autoName = `${providerName} User`;
+
+                state.currentUser.name = autoName;
+                state.currentUser.email = autoEmail;
+                state.currentUser.slug = autoName.toLowerCase().replace(/\s+/g, '');
+                state.registeredAccounts.push(autoEmail);
+
+                document.getElementById('oauth-loading').classList.add('hidden');
+                bootDashboard();
+            }, 1500);
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            
+            state.currentUser.name = name;
+            state.currentUser.email = email;
+            state.currentUser.slug = name.toLowerCase().replace(/\s+/g, '');
+            state.registeredAccounts.push(email);
+            
+            bootDashboard();
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const errorBox = document.getElementById('login-error');
+            
+            if (state.registeredAccounts.includes(email) || email === 'rian@gmail.com') {
+                errorBox.classList.add('hidden');
+                state.currentUser.email = email;
+                bootDashboard();
+            } else {
+                errorBox.classList.remove('hidden');
+                document.getElementById('login-error-text').innerText = 'Email belum terdaftar! Silakan daftar terlebih dahulu.';
+            }
+        }
+
+        function bootDashboard() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('dashboard-app').classList.remove('hidden');
+
+            document.getElementById('input-display-name').value = state.currentUser.name;
+            document.getElementById('input-whatsapp').value = state.currentUser.whatsapp;
+            document.getElementById('input-bio').value = state.currentUser.bio;
+            document.getElementById('profile-avatar-preview').src = state.currentUser.avatar;
+
+            document.getElementById('info-name').innerText = state.currentUser.name;
+            document.getElementById('info-email').innerText = state.currentUser.email;
+            document.getElementById('info-wa').innerText = `+${state.currentUser.whatsapp}`;
+
+            renderAll();
+        }
+
+        function handleLogout() {
+            document.getElementById('dashboard-app').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            toggleAuthMode('login');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+                btn.classList.remove('border-red-600');
+                btn.classList.add('border-zinc-800');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`nav-btn-${tabId}`).classList.add('border-red-600');
+            document.getElementById(`nav-btn-${tabId}`).classList.remove('border-zinc-800');
+        }
+
+        function switchPreviewMode(mode) {
+            const btnHp = document.getElementById('btn-prev-hp');
+            const btnPc = document.getElementById('btn-prev-pc');
+            const containerHp = document.getElementById('container-preview-hp');
+            const containerPc = document.getElementById('container-preview-pc');
+
+            if (mode === 'hp') {
+                btnHp.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-red-600 text-white shadow';
+                btnPc.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-zinc-400 hover:text-white';
+                containerHp.classList.remove('hidden');
+                containerPc.classList.add('hidden');
+            } else {
+                btnPc.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-red-600 text-white shadow';
+                btnHp.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-zinc-400 hover:text-white';
+                containerPc.classList.remove('hidden');
+                containerHp.classList.add('hidden');
+            }
+        }
+
+        // UPLOAD FOTO DARI GALERI (AVATAR & COVER)
+        function uploadPhotoFromGallery(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    state.currentUser.avatar = e.target.result;
+                    document.getElementById('profile-avatar-preview').src = e.target.result;
+                    renderAll();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function uploadCoverFromGallery(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    state.currentUser.cover = e.target.result;
+                    renderAll();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateProfileData() {
+            state.currentUser.name = document.getElementById('input-display-name').value;
+            state.currentUser.slug = state.currentUser.name.toLowerCase().replace(/\s+/g, '') || 'store';
+            state.currentUser.whatsapp = document.getElementById('input-whatsapp').value;
+            state.currentUser.bio = document.getElementById('input-bio').value;
+
+            document.getElementById('info-name').innerText = state.currentUser.name;
+            document.getElementById('info-wa').innerText = `+${state.currentUser.whatsapp}`;
+
+            renderAll();
+        }
+
+        function randomizeAvatar() {
+            const seed = Math.floor(Math.random() * 1000);
+            state.currentUser.avatar = `https://picsum.photos/seed/${seed}/300/300`;
+            document.getElementById('profile-avatar-preview').src = state.currentUser.avatar;
+            renderAll();
+        }
+
+        function randomizeCover() {
+            const seeds = [
+                'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&auto=format&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&auto=format&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1426604966848-d7adac902bff?w=600&auto=format&fit=crop&q=80'
+            ];
+            state.currentUser.cover = seeds[Math.floor(Math.random() * seeds.length)];
+            renderAll();
+        }
+
+        function showUserInfoModal() {
+            document.getElementById('modal-user-info').classList.remove('hidden');
+        }
+
+        function openAddItemModal() {
+            document.getElementById('modal-add-item').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function saveNewItem() {
+            const name = document.getElementById('new-item-name').value;
+            const price = parseInt(document.getElementById('new-item-price').value) || 0;
+            const image = document.getElementById('new-item-image').value || 'https://via.placeholder.com/150';
+
+            if(name && price) {
+                state.items.push({ id: Date.now().toString(), name, price, image, status: 'available' });
+                closeModal('modal-add-item');
+                renderAll();
+            }
+        }
+
+        function buyItem(itemId) {
+            const item = state.items.find(i => i.id === itemId);
+            if(item) {
+                item.status = 'sold';
+                state.stats.revenue += item.price;
+                renderAll();
+
+                const message = encodeURIComponent(`Halo, saya ingin membeli: ${item.name} seharga Rp ${item.price.toLocaleString('id-ID')}. Apakah stok tersedia?`);
+                window.open(`https://wa.me/${state.currentUser.whatsapp}?text=${message}`, '_blank');
+            }
+        }
+
+        function cancelTransaction(itemId) {
+            const item = state.items.find(i => i.id === itemId);
+            if(item && item.status === 'sold') {
+                item.status = 'available';
+                state.stats.revenue -= item.price;
+                if(state.stats.revenue < 0) state.stats.revenue = 0;
+                renderAll();
+            }
+        }
+
+        function addNewLink() {
+            state.links.push({ id: Date.now().toString(), title: 'Link Langsung', url: 'https://whatsapp.com', icon: 'fa-globe' });
+            renderAll();
+        }
+
+        function updateLinkItem(id, key, val) {
+            const link = state.links.find(l => l.id === id);
+            if(link) {
+                link[key] = val;
+                renderAll();
+            }
+        }
+
+        function deleteLink(id) {
+            state.links = state.links.filter(l => l.id !== id);
+            renderAll();
+        }
+
+        function updateStatsUI() {
+            document.getElementById('stat-views').innerText = state.stats.views;
+            document.getElementById('stat-revenue').innerText = `Rp ${state.stats.revenue.toLocaleString('id-ID')}`;
+            const soldCount = state.items.filter(i => i.status === 'sold').length;
+            document.getElementById('stat-sold-count').innerText = soldCount;
+        }
+
+        function renderStoreItems() {
+            const container = document.getElementById('store-items-container');
+            container.innerHTML = '';
+
+            state.items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-zinc-950 border border-zinc-800 rounded-2xl p-3 flex flex-col justify-between space-y-3";
+                card.innerHTML = `
+                    <div class="w-full h-32 rounded-xl overflow-hidden bg-zinc-900">
+                        <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-xs text-white truncate">${item.name}</h4>
+                        <span class="text-xs text-red-500 font-mono font-bold">Rp ${item.price.toLocaleString('id-ID')}</span>
+                        <span class="block text-[10px] mt-1 text-zinc-400">Status: <strong class="${item.status === 'sold' ? 'text-emerald-400' : 'text-zinc-300'}">${item.status === 'sold' ? 'Terjual (Proses)' : 'Tersedia'}</strong></span>
+                    </div>
+                    <div class="flex gap-2">
+                        ${item.status === 'sold' ? 
+                            `<button onclick="cancelTransaction('${item.id}')" class="flex-1 bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-600/30 py-1.5 rounded-lg text-[11px] font-semibold">Cancel Transaksi</button>` :
+                            `<button onclick="buyItem('${item.id}')" class="flex-1 bg-red-600 hover:bg-red-500 py-1.5 rounded-lg text-[11px] font-semibold text-white">Beli via WA</button>`
+                        }
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderLinksList() {
+            const container = document.getElementById('links-container');
+            container.innerHTML = '';
+
+            state.links.forEach(link => {
+                const card = document.createElement('div');
+                card.className = "bg-zinc-950 border border-zinc-800 rounded-xl p-3 flex items-center justify-between gap-3";
+                card.innerHTML = `
+                    <div class="flex-1 space-y-1">
+                        <input type="text" value="${link.title}" onchange="updateLinkItem('${link.id}', 'title', this.value)" class="bg-transparent text-xs font-bold text-white w-full focus:outline-none border-b border-zinc-800 pb-0.5">
+                        <input type="text" value="${link.url}" onchange="updateLinkItem('${link.id}', 'url', this.value)" class="bg-transparent text-[11px] text-zinc-400 w-full focus:outline-none font-mono">
+                    </div>
+                    <button onclick="deleteLink('${link.id}')" class="text-red-500 hover:text-red-400 text-xs p-2"><i class="fa-solid fa-trash"></i></button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderPreview() {
+            // Update Slug Linktr.ee -> nexlink.me
+            document.getElementById('preview-slug-hp').innerText = state.currentUser.slug;
+            document.getElementById('preview-slug-pc').innerText = state.currentUser.slug;
+
+            // Update Cover & Avatar
+            document.getElementById('preview-cover-hp').src = state.currentUser.cover;
+            document.getElementById('preview-cover-pc').src = state.currentUser.cover;
+            document.getElementById('preview-avatar-hp').src = state.currentUser.avatar;
+            document.getElementById('preview-avatar-pc').src = state.currentUser.avatar;
+
+            document.getElementById('preview-name-hp').innerText = state.currentUser.name;
+            document.getElementById('preview-name-pc').innerText = state.currentUser.name;
+            document.getElementById('preview-bio-hp').innerText = state.currentUser.bio;
+            document.getElementById('preview-bio-pc').innerText = state.currentUser.bio;
+
+            const linksHp = document.getElementById('preview-links-hp');
+            const linksPc = document.getElementById('preview-links-pc');
+            linksHp.innerHTML = '';
+            linksPc.innerHTML = '';
+
+            // Gabungkan Tautan Toko & Item Jualan di Preview ala Linktree
+            state.links.forEach(link => {
+                const html = `
+                    <a href="${link.url}" target="_blank" class="w-full bg-zinc-900 hover:bg-red-600/20 border border-zinc-800 hover:border-red-600 py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-between text-white transition-all shadow">
+                        <span><i class="fa-solid ${link.icon} mr-1.5 text-red-500"></i> ${link.title}</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-zinc-500"></i>
+                    </a>
+                `;
+                linksHp.innerHTML += html;
+                linksPc.innerHTML += html;
+            });
+
+            state.items.forEach(item => {
+                const html = `
+                    <div class="w-full bg-zinc-900 border border-zinc-800 p-2 rounded-xl flex items-center justify-between text-left">
+                        <img src="${item.image}" class="w-10 h-10 rounded-lg object-cover">
+                        <div class="flex-1 px-2 overflow-hidden">
+                            <h6 class="text-[11px] font-bold text-white truncate">${item.name}</h6>
+                            <span class="text-[10px] text-red-500 font-mono font-bold">Rp ${item.price.toLocaleString('id-ID')}</span>
+                        </div>
+                        <button onclick="buyItem('${item.id}')" class="bg-red-600 hover:bg-red-500 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-white">Beli</button>
+                    </div>
+                `;
+                linksHp.innerHTML += html;
+                linksPc.innerHTML += html;
+            });
+        }
+
+        function openLivePreviewModal() {
+            const container = document.getElementById('public-view-body');
+            
+            let htmlContent = `
+                <div class="relative rounded-2xl overflow-hidden bg-zinc-900 mb-4">
+                    <img src="${state.currentUser.cover}" class="w-full h-32 object-cover">
+                    <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full overflow-hidden ring-4 ring-zinc-950 shadow-md">
+                        <img src="${state.currentUser.avatar}" class="w-full h-full object-cover">
+                    </div>
+                </div>
+                <div class="text-center space-y-1 mb-4">
+                    <h4 class="font-bold text-base text-white">${state.currentUser.name}</h4>
+                    <p class="text-xs text-zinc-400 max-w-xs mx-auto">${state.currentUser.bio}</p>
+                    <span class="text-[10px] font-mono text-zinc-500 block pt-1">nexlink.me/${state.currentUser.slug}</span>
+                </div>
+                <div class="space-y-2">
+            `;
+
+            state.links.forEach(link => {
+                htmlContent += `
+                    <a href="${link.url}" target="_blank" class="w-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 py-3 px-4 rounded-xl text-xs font-semibold flex items-center justify-between text-white transition-all">
+                        <span><i class="fa-solid ${link.icon} mr-2 text-red-500"></i> ${link.title}</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-zinc-500"></i>
+                    </a>
+                `;
+            });
+
+            state.items.forEach(item => {
+                htmlContent += `
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-2.5 flex items-center justify-between gap-3">
+                        <img src="${item.image}" class="w-12 h-12 rounded-lg object-cover">
+                        <div class="flex-1">
+                            <h5 class="text-xs font-bold text-white">${item.name}</h5>
+                            <span class="text-xs text-red-500 font-mono">Rp ${item.price.toLocaleString('id-ID')}</span>
+                        </div>
+                        <button onclick="buyItem('${item.id}'); closeModal('modal-public-preview');" class="bg-red-600 hover:bg-red-500 px-3 py-1.5 rounded-xl text-xs font-semibold text-white">Beli</button>
+                    </div>
+                `;
+            });
+
+            htmlContent += `</div>`;
+            container.innerHTML = htmlContent;
+
+            document.getElementById('modal-public-preview').classList.remove('hidden');
+        }
+
+        function renderAll() {
+            renderStoreItems();
+            renderLinksList();
+            renderPreview();
+            updateStatsUI();
+        }
+    </script>
+</body>
+</html>
